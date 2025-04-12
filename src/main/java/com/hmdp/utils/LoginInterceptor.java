@@ -2,31 +2,48 @@ package com.hmdp.utils;
 
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
 import com.hmdp.dto.UserDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+@Component
 public class LoginInterceptor implements HandlerInterceptor {
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 1. 获取 session
-        // 2. 获取 session 中的用户
-        Object user = request.getSession().getAttribute("user");
-
-        // 3. 判断用户是否存在
-        if (user == null) {
-            // 3.1 不存在，拦截
+        // 1. 从 session 中取出 token
+        String token = request.getHeader("authorization");
+        if (StrUtil.isBlank(token)) {
             response.setStatus(401);
             return false;
         }
 
-        // 3.2. 如果存在，把用户信息保存到 ThreadLocal，放行
-        // NOTE: 需要使用 BeanUtil 将 User 转换为 UserDTO
-        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        // 2. 依据 token 从 redis 中获取用户
+        String key = RedisConstants.LOGIN_USER_KEY + token;
+        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(key);
+        if (userMap.isEmpty()) {
+            response.setStatus(401);
+            return false;
+        }
+
+        // 3. 将 Hash 数据转化为 UserDTO
+        UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
+
+        // 4. 把用户信息保存到 ThreadLocal，放行
         UserHolder.saveUser(userDTO);
+
+        // 5. 刷新 Hash 数据有效期
+        stringRedisTemplate.expire(key, RedisConstants.LOGIN_USER_TTL, TimeUnit.SECONDS);
         return true;
     }
 
