@@ -15,6 +15,7 @@ spring:
     # 连接数据库的用户名
     username: root
     # 连接数据库的密码
+    # TODO: 这里会被提交到 git 上，如何规避？
     password: gy123456
   redis:
     # Redis服务器的主机地址
