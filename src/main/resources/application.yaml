@@ -24,7 +24,7 @@ spring:
     port: 6379
     # Redis服务器的访问密码
     password: ""
-    lettuce:
+    eettuce:
       pool:
         # 连接池最大活跃连接数
         max-active: 10
