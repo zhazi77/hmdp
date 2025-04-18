@@ -79,7 +79,7 @@ public class HmDianPingApplicationTests {
     // NOTE: 使用前要记得修改 UserServiceImpl 中的 sendCode 方法，让它返回 code
     @Test
     public void createUserBy1000() {
-        // NOTE: 生成的号码不一定合规，简单起见，直接跑两遍，然后删除多余的记录。
+        // NOTE: 生成的号码不一定合规，简单起见，直接跑两遍
         List<String> phones = RandomPhoneNumber.randomCreatePhone(1000);
         phones.stream().forEach(phone -> {
             if (!RegexUtils.isPhoneInvalid(phone)) {
