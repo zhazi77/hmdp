@@ -12,7 +12,9 @@ import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RegexUtils;
+import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +22,10 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -101,6 +106,57 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 8. 返回 token
         return Result.ok(token);
+    }
+
+    @Override
+    public Result sign() {
+        // 1. 获取当前登录用户
+        UserDTO user = UserHolder.getUser();
+
+        // 2. 获取当前日期
+        LocalDateTime time = LocalDateTime.now();
+
+        // 3. 拼接 key
+        String dateStr = time.format(DateTimeFormatter.ofPattern("yyyy:MM"));
+        String key = USER_SIGN_KEY + user.getId() + ":" + dateStr;
+
+        // 4. 签到
+        int dayOfMonth = time.getDayOfMonth();
+        stringRedisTemplate.opsForValue().setBit(key, dayOfMonth - 1, true);
+        return Result.ok();
+    }
+
+    @Override
+    public Result signCount() {
+        // 1. 获取当前登录用户
+        UserDTO user = UserHolder.getUser();
+
+        // 2. 获取当前日期
+        LocalDateTime time = LocalDateTime.now();
+
+        // 3. 拼接 key
+        String dateStr = time.format(DateTimeFormatter.ofPattern("yyyy:MM"));
+        String key = USER_SIGN_KEY + user.getId() + ":" + dateStr;
+
+        // 4. 获取当前日期是本月的第几天
+        int dayOfMonth = time.getDayOfMonth();
+
+        // 5. 获取当前用户本月的签到情况
+        List<Long> signResult = stringRedisTemplate.opsForValue().bitField(key, BitFieldSubCommands.create()
+                .get(BitFieldSubCommands.BitFieldType.unsigned(dayOfMonth)).valueAt(0));
+        if (signResult == null || signResult.isEmpty()) {
+            // 没有找到签到结果
+            return Result.ok(0);
+        }
+
+        // 6. 统计用户连续签到次数
+        int cnt = 0;
+        Long num = signResult.get(0);
+        while ((num & 1) == 1) {
+            cnt++;
+            num >>>= 1;
+        }
+        return Result.ok(cnt);
     }
 
     private User createUserWithPhone(String phone) {
