@@ -10,7 +10,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class MVCConfig implements WebMvcConfigurer {
-
     @Bean
     public RefreshTokenInterceptor getRefreshTokenInterceptor() {
         return new RefreshTokenInterceptor();
@@ -24,6 +23,10 @@ public class MVCConfig implements WebMvcConfigurer {
                         "/voucher/**",
                         "/shop-type/**",
                         "/upload/**",
+                        "/webjars/**",
+                        "/swagger-resources/**",
+                        "/v2/api-docs/**",
+                        "/swagger-ui.html",
                         "/blog/hot",
                         "/user/code",
                         "/user/login"

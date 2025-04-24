@@ -4,6 +4,10 @@ server:
   port: 8081
 
 spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
   application:
     # 应用名称设置为hmdp
     name: hmdp
@@ -27,9 +31,9 @@ spring:
     eettuce:
       pool:
         # 连接池最大活跃连接数
-        max-active: 10
+        max-active: 20
         # 连接池中最大的空闲连接数
-        max-idle: 10
+        max-idle: 20
         # 连接池中最小的空闲连接数
         min-idle: 1
         # 连接池中连接对象回收的时间间隔
@@ -38,7 +42,6 @@ spring:
     # JSON序列化时只包括非null字段
     default-property-inclusion: non_null
 
-mybatis-plus:
   # MyBatis-Plus实体类别名扫描包路径
   type-aliases-package: com.hmdp.entity
 
