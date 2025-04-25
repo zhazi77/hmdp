@@ -11,6 +11,7 @@ import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
+import com.hmdp.utils.JWTUtils;
 import com.hmdp.utils.RegexUtils;
 import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -91,16 +92,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             user = createUserWithPhone(phone);
         }
 
-        // 7. 如果存在，保存用户信息到 Redis 中，并返回ok
-        // 7.1 随机生成一个 token，作为登录令牌
-        String token = UUID.randomUUID().toString(true);
+        // 7. 如果存在，生成 JWT 令牌，返回给用户。
+        // 7.1 生成一个 JWT 作为登录令牌
+        String token = JWTUtils.generateToken(user.getId());
         // 7.2 将 User 对象转为 Hash 存储
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
         Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
                 CopyOptions.create()
                         .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
-        // 7.3 存储到 Redis
-        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
+        // 7.3 存储到 Redis (使用 userId 做为键）
+        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + user.getId(), userMap);
         // 7.4 设置有效期
         stringRedisTemplate.expire(LOGIN_CODE_KEY + token, LOGIN_USER_TTL, TimeUnit.SECONDS);
 

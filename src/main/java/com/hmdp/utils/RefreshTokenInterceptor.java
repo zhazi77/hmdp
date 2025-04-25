@@ -20,14 +20,14 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
     private StringRedisTemplate stringRedisTemplate;
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 1. 从 session 中取出 token
+        // 1. 从请求中取出 token
         String token = request.getHeader("authorization");
         if (StrUtil.isBlank(token)) {
             return true;
         }
 
-        // 2. 依据 token 从 redis 中获取用户
-        String key = RedisConstants.LOGIN_USER_KEY + token;
+        // 2. 解析 token (JWT) 获取用户 Id，然后从 redis 中获取用户信息
+        String key = RedisConstants.LOGIN_USER_KEY + JWTUtils.parseToken(token).getSubject();
         Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(key);
         if (userMap.isEmpty()) {
             return true;
