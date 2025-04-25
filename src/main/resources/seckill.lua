@@ -27,5 +27,5 @@ redis.call("incrby", stockKey, -1)
 -- 下单
 redis.call("sadd", orderKey, userId)
 -- 将订单放入消息队列中(已经在外面手动建好了)
-redis.call("xadd", "stream.orders", "*", "userId", userId, "voucherId", voucherId, "id", orderId)
+-- redis.call("xadd", "stream.orders", "*", "userId", userId, "voucherId", voucherId, "id", orderId)
 return 0
